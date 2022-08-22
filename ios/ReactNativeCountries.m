@@ -7,16 +7,33 @@
 
 #import "ReactNativeCountries.h"
 
+
+@interface ReactNativeCountries () {
+  NSArray *cachedCountryNames;
+  NSArray *cachedCountryNamesWithCodes;
+}
+  
+@end
+
+
 @implementation ReactNativeCountries
+
 - (dispatch_queue_t)methodQueue
 {
-    return dispatch_get_main_queue();
+  return dispatch_get_main_queue();
 }
 +(BOOL)requiresMainQueueSetup {
-    return YES;
+    return NO;
 }
 
 RCT_EXPORT_MODULE();
+
+-(void)dealloc {
+  cachedCountryNames = nil;
+  cachedCountryNamesWithCodes = nil;
+}
+
+
 -(NSArray *)countryCodes {
   return [NSLocale ISOCountryCodes];
 }
@@ -46,15 +63,26 @@ RCT_EXPORT_MODULE();
 
   return [NSArray arrayWithArray:dictArray];
 }
-- (NSDictionary *)constantsToExport
-{
-    NSArray *countryNamesWithCodes = [self countryNamesWithCodes];
-    NSArray *countryCodes = [self countryCodes];
-    NSArray *countryNames = [self countryNames];
-    
-    return @{ @"getCountryNamesWithCodes" :countryNamesWithCodes,
-              @"getCountryNames" : countryNames,
-              @"getCountryCodes" : countryCodes };
+
+
+RCT_EXPORT_METHOD(getCountryCodes: (RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  resolve([self countryCodes]);
+}
+
+RCT_EXPORT_METHOD(getCountryNames: (RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  if (cachedCountryNames == nil) {
+    cachedCountryNames = [self countryNames];
+  }
+  
+  resolve(cachedCountryNames);
+}
+
+RCT_EXPORT_METHOD(getCountryNamesWithCodes: (RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  if (cachedCountryNamesWithCodes == nil) {
+    cachedCountryNamesWithCodes = [self countryNamesWithCodes];
+  }
+  
+  resolve(cachedCountryNamesWithCodes);
 }
 
 @end
