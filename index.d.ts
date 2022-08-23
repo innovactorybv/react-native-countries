@@ -1,6 +1,7 @@
 
+export declare type CountryNameWithCode = { code: string; name: string }
 interface RNCountries {
-    getCountryNamesWithCodes: () => Promise<{ code: string; name: string }[]>
+    getCountryNamesWithCodes: () => Promise<CountryNameWithCode[]>
     getCountryCodes: () => Promise<string[]>
     getCountryNames: () => Promise<string[]>
 }
