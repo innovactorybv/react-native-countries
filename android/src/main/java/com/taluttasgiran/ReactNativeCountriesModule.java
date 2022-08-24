@@ -16,43 +16,65 @@ import java.util.Map;
 
 public class ReactNativeCountriesModule extends ReactContextBaseJavaModule {
 
-    private final ReactApplicationContext reactContext;
-
-    private WritableNativeArray countryNameListNative = new WritableNativeArray();
-    private WritableNativeArray countryCodeListNative = new WritableNativeArray();
-    private WritableNativeArray countryNameWithCodeNative = new WritableNativeArray();
-
+    private boolean listsLoaded = false;
+    private ArrayList<String> _cachedCountryCodes = new ArrayList<String>();
+    private ArrayList<String> _cachedCountryNames = new ArrayList<String>();
+    private ArrayList<Map<String, String>> _cachedCountryNamesWithCodes = new ArrayList<Map<String, String>>();
 
     ReactNativeCountriesModule(ReactApplicationContext reactContext) {
         super(reactContext);
-        this.reactContext = reactContext;
+    }
+
+    private void loadCountryLists() {
+        if (listsLoaded)
+            return;
+
         Locale[] locales = Locale.getAvailableLocales();
-        ArrayList<String> countryCodeList = new ArrayList<String>();
-        ArrayList<String> countryNameList = new ArrayList<String>();
+        _cachedCountryCodes = new ArrayList<String>();
+        _cachedCountryNames = new ArrayList<String>();
+        _cachedCountryNamesWithCodes = new ArrayList<Map<String, String>>();
         for (Locale locale : locales) {
             String countryName = locale.getDisplayCountry();
             String countryIso = locale.getCountry();
-            if (countryIso.trim().length() > 0 && countryName.trim().length() > 0 && !countryCodeList.contains(countryIso) && !countryNameList.contains(countryName)) {
-                countryCodeList.add(countryIso);
-                countryNameList.add(countryName);
-                countryCodeListNative.pushString(countryIso);
-                countryNameListNative.pushString(countryName);
-                WritableMap map = Arguments.createMap();
-                map.putString("code", countryIso);
-                map.putString("name", countryName);
-                countryNameWithCodeNative.pushMap(map);
+            if (countryIso.trim().length() > 0 && countryName.trim().length() > 0 && !_cachedCountryCodes.contains(countryIso) && !_cachedCountryNames.contains(countryName)) {
+                _cachedCountryCodes.add(countryIso);
+                _cachedCountryNames.add(countryName);
+
+                Map<String, String> map = new HashMap();
+                map.put("code", countryIso);
+                map.put("name", countryName);
+                _cachedCountryNamesWithCodes.add(map);
             }
         }
+
+        listsLoaded = true;
     }
 
-    @Override
-    public Map<String, Object> getConstants() {
-        final Map<String, Object> constants = new HashMap<>();
-        constants.put("getCountryNames", countryNameListNative);
-        constants.put("getCountryCodes", countryCodeListNative);
-        constants.put("getCountryNamesWithCodes", countryNameWithCodeNative);
-        return constants;
+
+    @ReactMethod
+    public void getCountryCodes(Promise promise) {
+        loadCountryLists();
+
+        WritableNativeArray countryCodeListNative = Arguments.makeNativeArray(_cachedCountryCodes);
+        promise.resolve(countryCodeListNative);
     }
+
+    @ReactMethod
+    public void getCountryNames(Promise promise) {
+        loadCountryLists();
+
+        WritableNativeArray countryNameListNative = Arguments.makeNativeArray(_cachedCountryNames);
+        promise.resolve(countryNameListNative);
+    }
+
+    @ReactMethod
+    public void getCountryNamesWithCodes(Promise promise) {
+        loadCountryLists();
+
+        WritableNativeArray countryNameWithCodeNative = Arguments.makeNativeArray(_cachedCountryNamesWithCodes);
+        promise.resolve(countryNameWithCodeNative);
+    }
+
 
     @Override
     public String getName() {
